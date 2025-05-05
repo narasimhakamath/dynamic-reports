@@ -1,0 +1,32 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+
+const reportRoutes = require('./routes/reports');
+const connectDB = require('./utils/database');
+
+connectDB();
+
+const allowLocalhost = function (origin, callback) {
+	if (!origin || origin.startsWith('http://localhost'))
+		callback(null, true);
+	else
+		callback(new Error('Not allowed by CORS'));
+};
+
+const app = express();
+app.use(express.json());
+
+app.use(cors({
+	origin: allowLocalhost,
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+	credentials: true
+}));
+
+app.use(bodyParser.json());
+
+app.use('/', reportRoutes);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
