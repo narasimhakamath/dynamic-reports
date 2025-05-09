@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 
 const reportRoutes = require('./routes/reports');
 const connectDB = require('./utils/database');
+const { closeAllConnections } = require('./utils/connectionManager');
 
 connectDB();
 
@@ -29,4 +30,23 @@ app.use(bodyParser.json());
 app.use('/', reportRoutes);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Handle graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received: closing HTTP server and database connections');
+  server.close(async () => {
+    console.log('HTTP server closed');
+    await closeAllConnections();
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT signal received: closing HTTP server and database connections');
+  server.close(async () => {
+    console.log('HTTP server closed');
+    await closeAllConnections();
+    process.exit(0);
+  });
+});

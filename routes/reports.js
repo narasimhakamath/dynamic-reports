@@ -1,8 +1,10 @@
 const express = require('express');
-const Report = require('../models/Report');
+const { MongoClient } = require('mongodb');
 const { v4: uuidv4 } = require('uuid');
 
-const { MongoClient} = require('mongodb');
+const Report = require('../models/Report');
+const parseFilter = require('./parseFilter');
+const { getConnection } = require('../utils/connectionManager');
 
 const router = express.Router();
 
@@ -10,10 +12,8 @@ router.post('/', async (req, res) => {
 	const { view, report } = req.body;
 
 	try {
-		const mongoClient = new MongoClient(process.env.MONGODB_URI);
-		await mongoClient.connect();
-
-		const db = mongoClient.db(view.viewDBName);
+		// Get connection from pool
+		const { db } = await getConnection(view.viewDBName);
 
 		const collections = await db.listCollections({ name: view.viewName }).toArray();
 		if (collections.length > 0) {
@@ -47,7 +47,7 @@ router.post('/', async (req, res) => {
 		});
 
 		await reportRecord.save();
-		await mongoClient.close();
+		// We don't close the connection - it stays in the pool for reuse
 
 		res.status(201).json({ message: `Report created successfully: ${REPORT_ID}.` });
 	} catch (err) {
@@ -56,44 +56,25 @@ router.post('/', async (req, res) => {
 	}
 });
 
-const parseFilterWithRegex = (filter) => {
-	const traverse = (obj) => {
-		for (const key in obj) {
-			if (typeof obj[key] === 'object' && obj[key] !== null) {
-				traverse(obj[key]);
-			} else if (typeof obj[key] === 'string' && /^\/.*\/$/.test(obj[key])) {
-				// Convert "/value/" to RegExp
-				const pattern = obj[key].slice(1, -1);
-				obj[key] = new RegExp(pattern, 'i'); // case-insensitive
-			}
-		}
-		return obj;
-	};
-	return traverse(filter);
-};
-
 router.get('/:reportID', async (req, res) => {
 	try {
-		const { reportID } = req.params;
-		const count = parseInt(req.query.count) || 10;
-		const page = parseInt(req.query.page) || 0;
+		const reportID = req?.params?.reportID;
 		const select = req.query.select;
 		const rawFilter = req.query.filter;
 		const sortParam = req.query.sort;
+
+		const page = parseInt(req?.query?.page) || 1;
+		const count = parseInt(req?.query?.count) || 10;
+		const offset = (page - 1) * count;
 
 		// Step 1: Get report metadata
 		const report = await Report.findOne({ id: reportID });
 		if (!report)
 			return res.status(404).json({ message: 'Report not found' });
-
 		const viewName = report?.view?.name;
 		const viewDBName = report?.view?.database;
-		
 
-		const mongoClient = new MongoClient(process.env.MONGODB_URI);
-		await mongoClient.connect();
-
-		const db = mongoClient.db(viewDBName);
+		const { db } = await getConnection(viewDBName);
 		const collection = db.collection(viewName);
 
 		const projection = {};
@@ -108,7 +89,7 @@ router.get('/:reportID', async (req, res) => {
 		if (rawFilter) {
 			try {
 				const parsed = JSON.parse(rawFilter);
-				filter = parseFilterWithRegex(parsed);
+				filter = parseFilter(parsed);
 			} catch (err) {
 				return res.status(400).json({ message: 'Invalid filter format', error: err.message });
 			}
@@ -123,12 +104,10 @@ router.get('/:reportID', async (req, res) => {
 		}
 
 		const data = await collection.find(filter, { projection })
-			.skip(page)
+			.skip(offset)
 			.sort(sort)
 			.limit(count)
 			.toArray();
-
-		await mongoClient.close();
 
 		res.json(data);
 	} catch (err) {
@@ -155,17 +134,15 @@ router.get('/:reportID/count', async (req, res) => {
 		const viewName = report?.view?.name;
 		const viewDBName = report?.view?.database;
 
-		const mongoClient = new MongoClient(process.env.MONGODB_URI);
-		await mongoClient.connect();
-
-		const db = mongoClient.db(viewDBName);
+		// Get connection from pool instead of creating a new one
+		const { db } = await getConnection(viewDBName);
 		const collection = db.collection(viewName);
 
 		let filter = {};
 		if (rawFilter) {
 			try {
 				const parsed = JSON.parse(rawFilter);
-				filter = parseFilterWithRegex(parsed);
+				filter = parseFilter(parsed);
 			} catch (err) {
 				return res.status(400).json({ message: 'Invalid filter format', error: err.message });
 			}
@@ -173,7 +150,7 @@ router.get('/:reportID/count', async (req, res) => {
 
 		const count = await collection.countDocuments(filter);
 
-		await mongoClient.close();
+		// We don't close the connection - it stays in the pool for reuse
 
 		res.json(count);
 	} catch (err) {
