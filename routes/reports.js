@@ -8,6 +8,30 @@ const { getConnection } = require('../utils/connectionManager');
 
 const router = express.Router();
 
+router.get('/', async (req, res) => {
+  try {
+    const reports = await Report.find({});
+    const formattedReports = reports.map(report => ({
+      id: report.id,
+      name: report.report.name,
+      description: report.report.description,
+      fields: report.report.fields,
+      filters: report.report.filters,
+      searchable: report.report.searchable
+    }));
+
+    res.json(formattedReports);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: 'Failed to fetch reports list',
+      success: false,
+      code: 500,
+      error: err.message
+    });
+  }
+});
+
 router.post('/', async (req, res) => {
 	const { view, report } = req.body;
 
