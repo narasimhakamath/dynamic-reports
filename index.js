@@ -37,6 +37,9 @@ process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server and database connections');
   server.close(async () => {
     console.log('HTTP server closed');
+    // Clear any in-memory caches
+    const { reportCache } = require('./utils/cache');
+    reportCache.clear();
     await closeAllConnections();
     process.exit(0);
   });
@@ -46,6 +49,9 @@ process.on('SIGINT', async () => {
   console.log('SIGINT signal received: closing HTTP server and database connections');
   server.close(async () => {
     console.log('HTTP server closed');
+    // Clear any in-memory caches
+    const { reportCache } = require('./utils/cache');
+    reportCache.clear();
     await closeAllConnections();
     process.exit(0);
   });

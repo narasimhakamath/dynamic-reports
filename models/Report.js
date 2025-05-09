@@ -4,7 +4,8 @@ const ReportSchema = new mongoose.Schema({
 	id: {
 		type: String,
 		unique: true,
-		required: true
+		required: true,
+		index: true // Add index for faster lookup
 	},
 	view: {
 		name: {
@@ -28,7 +29,8 @@ const ReportSchema = new mongoose.Schema({
 		name: {
 			type: String,
 			required: true,
-			unique: true
+			unique: true,
+			index: true // Add index for report name lookups
 		},
 		description: {
 			type: String,

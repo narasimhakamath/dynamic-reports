@@ -67,10 +67,24 @@ router.get('/:reportID', async (req, res) => {
 		const count = parseInt(req?.query?.count) || 10;
 		const offset = (page - 1) * count;
 
-		// Step 1: Get report metadata
-		const report = await Report.findOne({ id: reportID });
-		if (!report)
-			return res.status(404).json({ message: 'Report not found' });
+		// Create a cache key based on report ID
+		const { reportCache } = require('../utils/cache');
+		const cacheKey = `report_${reportID}`;
+
+		// Try to get report from cache first
+		let report = reportCache.get(cacheKey);
+
+		// If not in cache, fetch from database and cache it
+		if (!report) {
+			// Step 1: Get report metadata
+			report = await Report.findOne({ id: reportID });
+			if (!report)
+				return res.status(404).json({ message: 'Report not found' });
+
+			// Store in cache for future requests
+			reportCache.set(cacheKey, report);
+		}
+
 		const viewName = report?.view?.name;
 		const viewDBName = report?.view?.database;
 
@@ -126,10 +140,23 @@ router.get('/:reportID/count', async (req, res) => {
 		const { reportID } = req.params;
 		const rawFilter = req.query.filter;
 
-		// Step 1: Get report metadata
-		const report = await Report.findOne({ id: reportID });
-		if (!report)
-			return res.status(404).json({ message: 'Report not found' });
+		// Create a cache key based on report ID
+		const { reportCache } = require('../utils/cache');
+		const cacheKey = `report_${reportID}`;
+
+		// Try to get report from cache first
+		let report = reportCache.get(cacheKey);
+
+		// If not in cache, fetch from database and cache it
+		if (!report) {
+			// Step 1: Get report metadata
+			report = await Report.findOne({ id: reportID });
+			if (!report)
+				return res.status(404).json({ message: 'Report not found' });
+
+			// Store in cache for future requests
+			reportCache.set(cacheKey, report);
+		}
 
 		const viewName = report?.view?.name;
 		const viewDBName = report?.view?.database;
