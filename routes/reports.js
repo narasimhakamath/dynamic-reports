@@ -146,8 +146,23 @@ router.get('/:reportID', async (req, res) => {
 			.sort(sort)
 			.limit(count)
 			.toArray();
-
-		res.json(data);
+			
+		// Get total count for pagination
+		const totalCount = await collection.countDocuments(filter);
+		const totalPages = Math.ceil(totalCount / count);
+		
+		// Return in standard pagination format
+		res.json({
+			data,
+			pagination: {
+				page,
+				count,
+				totalCount,
+				totalPages,
+				hasNextPage: page < totalPages,
+				hasPrevPage: page > 1
+			}
+		});
 	} catch (err) {
 		console.error(err);
 		res.status(500).json({
