@@ -31,7 +31,7 @@ const WidgetSchema = new mongoose.Schema({
     type: {
       type: String,
       required: true, // e.g., 'line_chart', 'bar_chart', etc.
-      enum: ["LINECHART", "BARCHART"]
+      enum: ["LINECHART", "BARCHART", "PIECHART"]
     },
     options: {
       type: Object,
