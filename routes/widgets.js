@@ -101,10 +101,10 @@ router.get('/', async (req, res) => {
     // Format the widgets for the response
     const formattedWidgets = widgets.map(widget => ({
       id: widget.id,
-      name: widget.widget.name,
-      description: widget.widget.description,
-      type: widget.widget.type,
-      options: widget.options,
+      name: widget?.widget?.name,
+      description: widget?.widget?.description,
+      type: widget?.widget?.type,
+      options: widget?.widget?.options,
     }));
 
     // Send the formatted widgets as the response
@@ -138,11 +138,11 @@ router.get('/:widgetID', async (req, res) => {
 
     // Return widget metadata and data
     res.json({
-      id: widget.id,
-      name: widget.widget.name,
-      description: widget.widget.description,
-      type: widget.type,
-      options: widget.options,
+      id: widget?.id,
+      name: widget?.widget?.name,
+      description: widget?.widget?.description,
+      type: widget?.widget?.type,
+      options: widget?.widget?.options,
       data, // Data from the pipeline query
     });
   } catch (err) {
