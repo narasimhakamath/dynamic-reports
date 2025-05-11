@@ -64,7 +64,7 @@ router.post("/", async (req, res) => {
     }
 
     // Validate widget type
-    const validTypes = ["LINECHART", "BARCHART"];
+    const validTypes = ["LINECHART", "BARCHART", "PIECHART"];
     if (!validTypes.includes(widget.type)) {
       return res.status(400).json({
         message: `Invalid widget type. Allowed types are: ${validTypes.join(", ")}`,
