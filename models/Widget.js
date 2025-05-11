@@ -6,33 +6,36 @@ const WidgetSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  name: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
+  query: {
+		pipeline: {
+			type: Array,
+			required: true
+		},
+		sourceCollection: {
+			type: String,
+			required: true
+		},
+		database: {
+			type: String,
+			required: true
+		},
+	},
+  widget: {
+    name: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+    },
   },
   type: {
     type: String,
     required: true, // e.g., 'line_chart', 'bar_chart', etc.
-  },
-  query: {
-    database: {
-      type: String,
-      required: true,
-    },
-    collection: {
-      type: String,
-      required: true,
-    },
-    pipeline: {
-      type: Array,
-      required: true, // MongoDB aggregation pipeline
-    },
+    enum: ["LINECHART", "BARCHART"]
   },
   options: {
-    type: Object, // UI-specific options like colors, labels, etc.
+    type: Object,
     default: {},
   },
 }, { timestamps: true });
