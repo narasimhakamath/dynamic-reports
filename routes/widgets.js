@@ -103,7 +103,7 @@ router.get('/', async (req, res) => {
       id: widget.id,
       name: widget.widget.name,
       description: widget.widget.description,
-      type: widget.type,
+      type: widget.widget.type,
       options: widget.options,
     }));
 
