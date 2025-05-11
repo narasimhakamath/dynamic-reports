@@ -28,15 +28,15 @@ const WidgetSchema = new mongoose.Schema({
     description: {
       type: String,
     },
-  },
-  type: {
-    type: String,
-    required: true, // e.g., 'line_chart', 'bar_chart', etc.
-    enum: ["LINECHART", "BARCHART"]
-  },
-  options: {
-    type: Object,
-    default: {},
+    type: {
+      type: String,
+      required: true, // e.g., 'line_chart', 'bar_chart', etc.
+      enum: ["LINECHART", "BARCHART"]
+    },
+    options: {
+      type: Object,
+      default: {},
+    },
   },
 }, { timestamps: true });
 

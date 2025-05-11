@@ -5,40 +5,91 @@ const { getConnection } = require("../utils/connectionManager");
 
 const router = express.Router();
 
+// router.post("/", async (req, res) => {
+//   const { name, description, type, query, options } = req.body;
+
+//   try {
+//     // Generate a unique ID for the widget
+//     const widgetId = uuidv4();
+
+//     // Validate query structure
+//     if (!query || !query.database || !query.collection || !query.pipeline) {
+//       return res.status(400).json({ message: "Invalid query structure" });
+//     }
+
+//     // Save widget to the database
+//     const widget = new Widget({
+//       id: widgetId,
+//       name,
+//       description,
+//       type,
+//       query,
+//       options,
+//     });
+
+//     await widget.save();
+
+//     res
+//       .status(201)
+//       .json({
+//         message: `Widget created successfully: ${widgetId}`,
+//       });
+//   } catch (err) {
+//     console.error(err);
+//     res
+//       .status(500)
+//       .json({ message: "Failed to create the widget", error: err.message });
+//   }
+// });
+
 router.post("/", async (req, res) => {
-  const { name, description, type, query, options } = req.body;
+  const { query, widget } = req.body;
 
   try {
     // Generate a unique ID for the widget
     const widgetId = uuidv4();
 
     // Validate query structure
-    if (!query || !query.database || !query.collection || !query.pipeline) {
-      return res.status(400).json({ message: "Invalid query structure" });
+    if (!query || !query.database || !query.sourceCollection || !query.pipeline) {
+      return res.status(400).json({
+        message: "Invalid query structure. Ensure 'database', 'sourceCollection', and 'pipeline' are provided.",
+      });
+    }
+
+    // Validate widget structure
+    if (!widget || !widget.name || !widget.type) {
+      return res.status(400).json({
+        message: "Invalid widget structure. Ensure 'name' and 'type' are provided.",
+      });
+    }
+
+    // Validate widget type
+    const validTypes = ["LINECHART", "BARCHART"];
+    if (!validTypes.includes(widget.type)) {
+      return res.status(400).json({
+        message: `Invalid widget type. Allowed types are: ${validTypes.join(", ")}`,
+      });
     }
 
     // Save widget to the database
-    const widget = new Widget({
+    const newWidget = new Widget({
       id: widgetId,
-      name,
-      description,
-      type,
       query,
-      options,
+      widget,
     });
 
-    await widget.save();
+    await newWidget.save();
 
-    res
-      .status(201)
-      .json({
-        message: `Widget created successfully: ${widgetId}`,
-      });
+    res.status(201).json({
+      message: `Widget created successfully: ${widgetId}`,
+      id: widgetId,
+    });
   } catch (err) {
     console.error(err);
-    res
-      .status(500)
-      .json({ message: "Failed to create the widget", error: err.message });
+    res.status(500).json({
+      message: "Failed to create the widget",
+      error: err.message,
+    });
   }
 });
 
