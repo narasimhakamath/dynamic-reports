@@ -104,6 +104,8 @@ router.get('/', async (req, res) => {
       name: widget?.widget?.name,
       description: widget?.widget?.description,
       type: widget?.widget?.type,
+      xAxisLabel: widget?.widget?.xAxisLabel,
+      yAxisLabel: widget?.widget?.yAxisLabel,
       options: widget?.widget?.options,
     }));
 
