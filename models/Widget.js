@@ -33,6 +33,12 @@ const WidgetSchema = new mongoose.Schema({
       required: true, // e.g., 'line_chart', 'bar_chart', etc.
       enum: ["LINECHART", "BARCHART", "PIECHART"]
     },
+    xAxisLabel: {
+      type: String,
+    },
+    yAxisLabel: {
+      type: String
+    },
     options: {
       type: Object,
       default: {},
