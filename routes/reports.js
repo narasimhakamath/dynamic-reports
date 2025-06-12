@@ -248,7 +248,7 @@ async function processExport(exportId, reportId, query, user) {
 	try {
 		// Update status to Processing
 		await ReportExport.findByIdAndUpdate(exportId, {
-			status: 'Processing',
+			status: 'PROCESSING',
 			'_metadata.lastUpdated': new Date()
 		});
 
@@ -278,7 +278,7 @@ async function processExport(exportId, reportId, query, user) {
 		if (count === 0) {
 			// Update export record to indicate no data
 			await ReportExport.findByIdAndUpdate(exportId, {
-				status: 'Completed',
+				status: 'COMPLETED',
 				recordCount: 0,
 				'_metadata.lastUpdated': new Date()
 			});
@@ -286,22 +286,12 @@ async function processExport(exportId, reportId, query, user) {
 			return;
 		}
 
-		// Use absolute paths
-		const baseDir = process.cwd();
-		const exportsDir = path.join(baseDir, 'exports');
-		
-		// Create directories with proper error handling
-		try {
-			await fsPromises.mkdir(exportsDir, { recursive: true });
-			
-			// Create export directory
-			const exportDir = path.join(exportsDir, exportId);
-			await fsPromises.mkdir(exportDir, { recursive: true });
-			
-			// Create CSV file
-			const csvPath = path.join(exportDir, 'data.csv');
-			console.log('CSV path:', csvPath);
+		// Create a temporary file for CSV generation
+		const tempDir = path.join(process.cwd(), 'temp');
+		await fsPromises.mkdir(tempDir, { recursive: true });
+		const csvPath = path.join(tempDir, `${exportId}.csv`);
 
+		try {
 			// Get the fields from the report
 			const fields = report.report.fields;
 			console.log('Fields to export:', fields);
@@ -364,11 +354,6 @@ async function processExport(exportId, reportId, query, user) {
 					}
 				});
 
-				// Debug log for first record
-				if (recordCount === 0) {
-					console.log('First record processed:', record);
-				}
-				
 				records.push(record);
 				recordCount++;
 
@@ -390,65 +375,46 @@ async function processExport(exportId, reportId, query, user) {
 
 			console.log(`Total records processed: ${count}`);
 
-			// Create ZIP file
-			const zipPath = path.join(exportsDir, `${exportId}.zip`);
-			console.log('Creating ZIP file at:', zipPath);
+			// Read the CSV file into a buffer
+			const csvBuffer = await fsPromises.readFile(csvPath);
 			
-			const output = fs.createWriteStream(zipPath);
-			const archive = archiver('zip', { zlib: { level: 9 } });
-
-			output.on('close', () => {
-				console.log(`ZIP file created: ${zipPath}`);
+			// Create a ZIP buffer
+			const zipBuffer = await new Promise((resolve, reject) => {
+				const chunks = [];
+				const archive = archiver('zip', { zlib: { level: 9 } });
+				
+				archive.on('data', chunk => chunks.push(chunk));
+				archive.on('end', () => resolve(Buffer.concat(chunks)));
+				archive.on('error', reject);
+				
+				archive.append(csvBuffer, { name: `${exportId}.csv` });
+				archive.finalize();
 			});
 
-			archive.on('error', (err) => {
-				console.error('ZIP error:', err);
-				throw err;
-			});
-
-			archive.pipe(output);
-			archive.file(csvPath, { name: 'data.csv' });
-			await archive.finalize();
-
-			// Wait a moment to ensure files are written
-			await new Promise(resolve => setTimeout(resolve, 1000));
-
-			// Verify files exist before cleanup
-			console.log('Verifying files before cleanup...');
-			try {
-				const csvStats = await fsPromises.stat(csvPath);
-				const zipStats = await fsPromises.stat(zipPath);
-				console.log('Files verified:', {
-					csv: { path: csvPath, size: csvStats.size },
-					zip: { path: zipPath, size: zipStats.size }
-				});
-			} catch (error) {
-				console.error('File verification failed:', error);
-				throw new Error('Files were not created successfully');
-			}
-
-			// Clean up the CSV file after ZIP is created
-			console.log('Cleaning up CSV file...');
-			await fsPromises.unlink(csvPath);
-			await fsPromises.rmdir(exportDir);
-			console.log('Cleanup complete');
-
-			// Update export record
+			// Store the ZIP buffer in MongoDB
 			await ReportExport.findByIdAndUpdate(exportId, {
-				status: 'Completed',
+				status: 'COMPLETED',
 				recordCount: count,
+				fileData: zipBuffer,
 				'_metadata.lastUpdated': new Date()
 			});
 
-		} catch (error) {
-			console.error('Error in file operations:', error);
-			throw error;
+			console.log('Export completed and stored in MongoDB');
+
+		} finally {
+			// Clean up temporary file
+			try {
+				await fsPromises.unlink(csvPath);
+				await fsPromises.rmdir(tempDir);
+			} catch (error) {
+				console.error('Error cleaning up temporary files:', error);
+			}
 		}
 
 	} catch (error) {
 		console.error('Export processing error:', error);
 		await ReportExport.findByIdAndUpdate(exportId, {
-			status: 'Failed',
+			status: 'FAILED',
 			'_metadata.lastUpdated': new Date()
 		});
 		throw error;
@@ -499,7 +465,7 @@ router.post('/export/:reportId', async (req, res) => {
 			reportId,
 			fileName,
 			filter: processedFilter,
-			status: 'Pending'
+			status: 'PENDING'
 		});
 
 		await reportExport.save();
@@ -511,7 +477,7 @@ router.post('/export/:reportId', async (req, res) => {
 		res.status(202).json({
 			message: 'Export initiated',
 			exportId,
-			status: 'Pending'
+			status: 'PENDING'
 		});
 
 	} catch (error) {
@@ -600,17 +566,19 @@ router.get('/exports', async (req, res) => {
         const totalCount = await ReportExport.countDocuments(query);
         const totalPages = Math.ceil(totalCount / count);
 
-        res.json({
-            data: exports,
-            pagination: {
-                page,
-                count,
-                totalCount,
-                totalPages,
-                hasNextPage: page < totalPages,
-                hasPrevPage: page > 1
-            }
-        });
+        res.json(exports);
+
+        // res.json({
+        //     data: exports,
+        //     pagination: {
+        //         page,
+        //         count,
+        //         totalCount,
+        //         totalPages,
+        //         hasNextPage: page < totalPages,
+        //         hasPrevPage: page > 1
+        //     }
+        // });
     } catch (err) {
         console.error(err);
         res.status(500).json({
@@ -635,7 +603,7 @@ router.get('/exports/:exportId/download', async (req, res) => {
 			});
 		}
 
-		if (exportRecord.status !== 'Completed') {
+		if (exportRecord.status !== 'COMPLETED') {
 			return res.status(400).json({
 				message: 'Export is not ready for download',
 				status: exportRecord.status,
@@ -643,14 +611,9 @@ router.get('/exports/:exportId/download', async (req, res) => {
 			});
 		}
 
-		const filePath = path.join(__dirname, '../exports', `${exportId}.zip`);
-		
-		// Check if file exists
-		try {
-			await fsPromises.access(filePath);
-		} catch (error) {
+		if (!exportRecord.fileData) {
 			return res.status(404).json({
-				message: 'Export file not found',
+				message: 'Export file data not found',
 				success: false
 			});
 		}
@@ -659,9 +622,8 @@ router.get('/exports/:exportId/download', async (req, res) => {
 		res.setHeader('Content-Type', 'application/zip');
 		res.setHeader('Content-Disposition', `attachment; filename="${exportRecord.fileName}"`);
 		
-		// Stream the file
-		const fileStream = fs.createReadStream(filePath);
-		fileStream.pipe(res);
+		// Send the buffer directly
+		res.send(exportRecord.fileData);
 
 	} catch (error) {
 		console.error('Download error:', error);

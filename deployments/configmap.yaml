@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dynamic-reports-config
+  namespace: ledgers
+data:
+  MONGODB_URI: "mongodb://172.31.14.107:27017"
+  PORT: "3000"

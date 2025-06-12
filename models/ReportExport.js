@@ -47,12 +47,15 @@ const reportExportSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Pending', 'Processing', 'Completed', 'Failed'],
-        default: 'Pending'
+        enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'],
+        default: 'PENDING'
     },
     fileName: {
         type: String,
         required: true
+    },
+    fileData: {
+        type: Buffer,
     },
     recordCount: {
         type: Number,
