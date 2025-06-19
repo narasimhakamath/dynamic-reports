@@ -21,9 +21,6 @@ router.get('/', async (req, res) => {
       id: report.id,
       name: report.report.name,
       description: report.report.description,
-      fields: report.report.fields,
-      filters: report.report.filters,
-      searchable: report.report.searchable
     }));
 
     res.json(formattedReports);
@@ -185,7 +182,7 @@ router.get('/configuration/:reportID', async (req, res) => {
 	const reportID = req?.params?.reportID;
 
 	try {
-		const report = await Report.find({id: reportID});
+		const report = await Report.findOne({id: reportID});
 		
 		if(!report) {
 			return res.status(404).json({ message: 'Report not found' });
