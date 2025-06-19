@@ -748,4 +748,47 @@ setInterval(cleanupOldExportFiles, 24 * 60 * 60 * 1000);
 // Run initial cleanup on startup
 cleanupOldExportFiles();
 
+// Route to delete a report export by ID
+router.delete('/exports/:exportId', async (req, res) => {
+    try {
+        const { exportId } = req.params;
+        const exportRecord = await ReportExport.findById(exportId);
+
+        if (!exportRecord) {
+            return res.status(404).json({
+                message: 'Export not found',
+                success: false
+            });
+        }
+
+        // Remove the record from MongoDB
+        await ReportExport.findByIdAndDelete(exportId);
+
+        // Optionally, also remove the file from the filesystem if it exists (legacy)
+        const baseDir = process.cwd();
+        const exportsDir = path.join(baseDir, 'exports');
+        const zipPath = path.join(exportsDir, `${exportId}.zip`);
+        try {
+            await fsPromises.unlink(zipPath);
+            console.log(`Deleted file: ${zipPath}`);
+        } catch (err) {
+            if (err.code !== 'ENOENT') {
+                console.error(`Error deleting file ${zipPath}:`, err);
+            }
+        }
+
+        res.json({
+            message: 'Export deleted successfully',
+            success: true
+        });
+    } catch (error) {
+        console.error('Error deleting export:', error);
+        res.status(500).json({
+            message: 'Failed to delete export',
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;
