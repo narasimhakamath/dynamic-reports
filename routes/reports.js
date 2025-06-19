@@ -435,7 +435,7 @@ async function processExport(exportId, reportId, query, user) {
 }
 
 // Route to initiate export
-router.post('/export/:reportId', async (req, res) => {
+router.post('/exports/:reportId', async (req, res) => {
 	try {
 		const { filter, totalRecords } = req.body;
 		const { reportId } = req.params;
