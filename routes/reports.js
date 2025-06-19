@@ -181,6 +181,22 @@ router.get('/read/:reportID', async (req, res) => {
 	}
 });
 
+router.get('/configuration/:reportID', async (req, res) => {
+	const reportID = req?.params?.reportID;
+
+	try {
+		const report = await Report.find({id: reportID});
+		
+		if(!report) {
+			return res.status(404).json({ message: 'Report not found' });
+		}
+
+		return res.json(report);
+	} catch(error) {
+
+	}
+});
+
 router.get('/read/:reportID/count', async (req, res) => {
 	try {
 		const { reportID } = req.params;
