@@ -662,7 +662,6 @@ router.post('/exports/:exportId/viewed', async (req, res) => {
 			'_metadata.viewed': true,
 			'_metadata.viewedAt': new Date(),
 			'_metadata.expiresAt': expiresAt,
-			'_metadata.lastUpdated': new Date()
 		});
 
 		res.json({
@@ -674,6 +673,35 @@ router.post('/exports/:exportId/viewed', async (req, res) => {
 		console.error('Error marking export as viewed:', error);
 		res.status(500).json({
 			message: 'Failed to mark export as viewed',
+			success: false,
+			error: error.message
+		});
+	}
+});
+
+router.post('/exports/markAllViewed', async (req, res) => {
+	try {
+		const { retentionDays = 7 } = req.body;
+
+		const expiresAt = new Date();
+		expiresAt.setDate(expiresAt.getDate() + retentionDays);
+
+		const result = await ReportExport.updateMany(
+			// { 'user.email': userEmail }, // Filter to find all exports for the specific user
+			{
+				$set: {
+					'_metadata.viewed': true,
+					'_metadata.viewedAt': new Date(),
+					'_metadata.expiresAt': expiresAt,
+				}
+			}
+		);
+
+
+	} catch(error) {
+		console.error('Error marking all exports as viewed:', error);
+		res.status(500).json({
+			message: 'Failed to mark all exports as viewed',
 			success: false,
 			error: error.message
 		});
