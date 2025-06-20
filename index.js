@@ -11,21 +11,19 @@ const { closeAllConnections } = require('./utils/connectionManager');
 
 connectDB();
 
-// Fix this later...
-const allowLocalhost = function (origin, callback) {
-	if (!origin ||
-		origin.startsWith('http://localhost') ||
-		origin.includes('webcontainer-api.io'))
-		callback(null, true);
-	else
-		callback(new Error('Not allowed by CORS'));
-};
+const allowedOrigins = ['http://localhost:3000', 'https://yourdomain.com'];
 
 const app = express();
 app.use(express.json());
 
 app.use(cors({
-	origin: allowLocalhost,
+	origin: function(origin, callback) {
+		if (!origin || allowedOrigins.includes(origin)) {
+			callback(null, true);
+		} else {
+			callback(new Error('Not allowed by CORS'));
+		}
+	},
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 	credentials: true
 }));
