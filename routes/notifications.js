@@ -106,7 +106,7 @@ router.get('/', async (req, res) => {
             isClicked: 1
         }};
 
-        const notifications = await Notification.find(query)
+        const notifications = await Notification.find(query, projection)
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(count);
