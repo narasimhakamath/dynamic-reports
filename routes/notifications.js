@@ -92,10 +92,11 @@ router.get('/', async (req, res) => {
         // if (!userId) {
         //     return res.status(400).json({ message: 'User ID is required (will be autofetched from JWT in production)' });
         // }
-        const page = parseInt(req.query.page) || 1;
-        const count = parseInt(req.query.count) || 10;
+        const page = parseInt(req?.query?.page) || 1;
+        const count = parseInt(req?.query?.count) || 10;
         const skip = (page - 1) * count;
         // const query = { user: userId };
+        const query = {};
         const notifications = await Notification.find(query)
             .sort({ createdAt: -1 })
             .skip(skip)
