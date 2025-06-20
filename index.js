@@ -31,7 +31,7 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-app.use('/reports', reportRoutes);
+app.use('/insights/reports', reportRoutes);
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
