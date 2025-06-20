@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: reports
+  name: insights
   namespace: ledgers
 spec:
   selector:
-    app: reports
+    app: insights
   ports:
     - protocol: TCP
       port: 3000

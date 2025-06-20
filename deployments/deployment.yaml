@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: reports
+  name: insights
   namespace: ledgers
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: reports
+      app: insights
   template:
     metadata:
       labels:
-        app: reports
+        app: insights
     spec:
       containers:
-        - name: reports
-          image: reports:1.0.0
+        - name: insights
+          image: insights:1.0.0
           ports:
             - containerPort: 3000
           envFrom:
             - configMapRef:
-                name: dynamic-reports-config
+                name: dynamic-insights-config
