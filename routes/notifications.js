@@ -103,7 +103,8 @@ router.get('/', async (req, res) => {
             title: 1,
             message: 1,
             isRead: 1,
-            isClicked: 1
+            isClicked: 1,
+            createdAt: 1
         };
 
         const notifications = await Notification.find(query, projection)
