@@ -22,14 +22,15 @@ router.post('/', async (req, res) => {
 });
 
 // Get all notifications for a user
-router.get('/user/:user', async (req, res) => {
-    try {
-        const notifications = await Notification.find({ user: req.params.user }).sort({ createdAt: -1 });
-        res.json(notifications);
-    } catch (err) {
-        res.status(500).json({ message: 'Failed to fetch notifications', error: err.message });
-    }
-});
+// router.get('/user/:user', async (req, res) => {
+//     try {
+//         const notifications = await Notification.find({ user: req.params.user }).sort({ createdAt: -1 });
+//         res.json(notifications);
+//     } catch (err) {
+//         res.status(500).json({ message: 'Failed to fetch notifications', error: err.message });
+//     }
+// });
+
 
 // Mark a notification as read
 router.patch('/:id/read', async (req, res) => {
@@ -54,9 +55,18 @@ router.patch('/:id/clicked', async (req, res) => {
 });
 
 // Mark all notifications as read for a user
-router.patch('/user/:user/read-all', async (req, res) => {
+// router.patch('/user/:user/read-all', async (req, res) => {
+//     try {
+//         await Notification.updateMany({ user: req.params.user, read: false }, { read: true, updatedAt: new Date() });
+//         res.json({ message: 'All notifications marked as read' });
+//     } catch (err) {
+//         res.status(500).json({ message: 'Failed to mark all as read', error: err.message });
+//     }
+// });
+
+router.patch('/read-all', async (req, res) => {
     try {
-        await Notification.updateMany({ user: req.params.user, read: false }, { read: true, updatedAt: new Date() });
+        await Notification.updateMany({ read: false }, { read: true, updatedAt: new Date() });
         res.json({ message: 'All notifications marked as read' });
     } catch (err) {
         res.status(500).json({ message: 'Failed to mark all as read', error: err.message });
@@ -71,6 +81,29 @@ router.delete('/:id', async (req, res) => {
         res.json({ message: 'Notification deleted', notification });
     } catch (err) {
         res.status(500).json({ message: 'Failed to delete notification', error: err.message });
+    }
+});
+
+// Paginated notifications list for the current user
+router.get('/', async (req, res) => {
+    try {
+        // In the future, userId will be set from JWT middleware
+        // const userId = req.user?.id || req.user || req.query.userId; // fallback for now
+        // if (!userId) {
+        //     return res.status(400).json({ message: 'User ID is required (will be autofetched from JWT in production)' });
+        // }
+        const page = parseInt(req.query.page) || 1;
+        const count = parseInt(req.query.count) || 10;
+        const skip = (page - 1) * count;
+        // const query = { user: userId };
+        const notifications = await Notification.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(count);
+
+        res.json(notifications);
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to fetch notifications', error: err.message });
     }
 });
 
