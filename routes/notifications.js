@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
 // Mark a notification as read
 router.patch('/:id/read', async (req, res) => {
     try {
-        const notification = await Notification.findByIdAndUpdate(req.params.id, { read: true, updatedAt: new Date() }, { new: true });
+        const notification = await Notification.findByIdAndUpdate(req.params.id, { isRead: true, updatedAt: new Date() }, { new: true });
         if (!notification) return res.status(404).json({ message: 'Notification not found' });
         res.json({ message: 'Notification marked as read', notification });
     } catch (err) {
@@ -46,7 +46,7 @@ router.patch('/:id/read', async (req, res) => {
 // Mark a notification as clicked
 router.patch('/:id/clicked', async (req, res) => {
     try {
-        const notification = await Notification.findByIdAndUpdate(req.params.id, { clicked: true, updatedAt: new Date() }, { new: true });
+        const notification = await Notification.findByIdAndUpdate(req.params.id, { isClicked: true, updatedAt: new Date() }, { new: true });
         if (!notification) return res.status(404).json({ message: 'Notification not found' });
         res.json({ message: 'Notification marked as clicked', notification });
     } catch (err) {
@@ -66,7 +66,7 @@ router.patch('/:id/clicked', async (req, res) => {
 
 router.patch('/read-all', async (req, res) => {
     try {
-        await Notification.updateMany({ read: false }, { read: true, updatedAt: new Date() });
+        await Notification.updateMany({ isRead: false }, { isRead: true, updatedAt: new Date() });
         res.json({ message: 'All notifications marked as read' });
     } catch (err) {
         res.status(500).json({ message: 'Failed to mark all as read', error: err.message });
@@ -97,6 +97,15 @@ router.get('/', async (req, res) => {
         const skip = (page - 1) * count;
         // const query = { user: userId };
         const query = {};
+
+        const projection = { projection: {
+            _id: 1,
+            title: 1,
+            message: 1,
+            isRead: 1,
+            isClicked: 1
+        }};
+
         const notifications = await Notification.find(query)
             .sort({ createdAt: -1 })
             .skip(skip)
