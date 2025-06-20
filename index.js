@@ -4,6 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const reportRoutes = require('./routes/reports');
+const notificationsRoutes = require('./routes/notifications');
 
 const connectDB = require('./utils/database');
 const { closeAllConnections } = require('./utils/connectionManager');
@@ -32,6 +33,7 @@ app.use(cors({
 app.use(bodyParser.json());
 
 app.use('/insights/reports', reportRoutes);
+app.use('/notifications', notificationsRoutes);
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
