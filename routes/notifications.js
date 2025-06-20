@@ -98,13 +98,13 @@ router.get('/', async (req, res) => {
         // const query = { user: userId };
         const query = {};
 
-        const projection = { projection: {
+        const projection = {
             _id: 1,
             title: 1,
             message: 1,
             isRead: 1,
             isClicked: 1
-        }};
+        };
 
         const notifications = await Notification.find(query, projection)
             .sort({ createdAt: -1 })
